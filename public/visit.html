@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>💅 Tarjeta de Fidelidad - Loyalty Nails</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+</head>
+<body>
+  <div class="header">
+    <h1>💅 Loyalty Nails</h1>
+    <div class="subtitle" id="salonName">Cargando salón...</div>
+  </div>
+
+  <div class="container">
+    <!-- LOADING -->
+    <div id="loading" class="card" style="text-align:center; padding:40px;">
+      <div class="spinner" style="border-color: rgba(233,30,99,0.2); border-top-color: var(--pink); width:40px; height:40px; margin: 0 auto 16px;"></div>
+      <p style="color: var(--gray-500);">Cargando tu tarjeta de fidelidad...</p>
+    </div>
+
+    <!-- ERROR VIEW -->
+    <div id="errorView" class="hidden">
+      <div class="card" style="text-align:center; padding:40px;">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">🔍</div>
+        <h3 style="color: var(--gray-900); margin-bottom: 8px;">Código de Salón Inválido</h3>
+        <p style="color: var(--gray-500); font-size: 0.9rem; line-height: 1.5;">
+          El código QR escaneado no corresponde a ningún salón registrado o ha cambiado.
+        </p>
+        <a href="/" class="btn btn-primary" style="margin-top: 20px;">Volver al Inicio</a>
+      </div>
+    </div>
+
+    <!-- MAIN INTERACTION VIEW -->
+    <div id="mainView" class="hidden">
+      
+      <!-- Existing Client Fast-Check Card (shown if client phone was remembered) -->
+      <div id="welcomeBackCard" class="card hidden" style="border-left: 4px solid var(--pink); background: #FFF5F8;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:0.8rem; text-transform:uppercase; color:var(--pink); font-weight:700;">Clienta frecuente</div>
+            <h3 id="welcomeName" style="color:var(--gray-900); margin:2px 0;"></h3>
+            <span id="welcomePhone" style="font-size:0.85rem; color:var(--gray-500);"></span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showChangePhoneModal()" style="width:auto; padding:6px 12px; font-size:0.75rem;">
+            Cambiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Registration / Stamp Action Card -->
+      <div class="card" id="stampActionCard">
+        <div class="card-title">✨ Registrar Servicio de Hoy</div>
+        <p style="font-size: 0.88rem; color: var(--gray-700); margin-bottom: 16px;">
+          Escaneaste el código en el salón. Selecciona el servicio recibido para estampar tu tarjeta:
+        </p>
+
+        <div id="formAlert"></div>
+
+        <div id="manualFields">
+          <div class="form-group">
+            <label>Tu Nombre y Apellido</label>
+            <input type="text" id="clientName" placeholder="Ej: María Rodríguez" autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label>Tu Número de Teléfono (WhatsApp)</label>
+            <input type="tel" id="clientPhone" placeholder="Ej: 04141234567" autocomplete="tel">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Servicio Realizado</label>
+          <select id="serviceType">
+            <option value="Manicure Tradicional">💅 Manicure Tradicional</option>
+            <option value="Manicure Semipermanente">✨ Manicure Semipermanente</option>
+            <option value="Pedicure Spa">🦶 Pedicure Spa</option>
+            <option value="Mani + Pedi Combo">💅🦶 Manicure + Pedicure Combo</option>
+            <option value="Uñas Acrílicas / Esculpidas">💎 Uñas Acrílicas / Esculpidas</option>
+            <option value="Uñas en Poligel / Gel">🌟 Uñas en Poligel / Gel</option>
+            <option value="Baño de Acrílico / Kapping">🛡️ Baño de Acrílico / Kapping</option>
+            <option value="Diseño / Nail Art Especial">🎨 Diseño / Nail Art</option>
+            <option value="Retiro y Mantenimiento">🔄 Retiro y Mantenimiento</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="stampBtn" onclick="submitVisit()" style="font-size:1.05rem; padding:14px;">
+          💅 Estampar Mi Visita
+        </button>
+      </div>
+
+      <!-- Live Loyalty Card View -->
+      <div id="loyaltyCardSection" class="hidden"></div>
+
+      <!-- Quick Check / Search Card -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-title" style="font-size: 1rem;">🔍 Consultar Tarjeta por Teléfono</div>
+        <p style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 12px;">
+          ¿Quieres ver cuántos sellos tienes sin registrar un nuevo servicio hoy?
+        </p>
+        <div style="display:flex; gap:8px;">
+          <input type="tel" id="lookupPhoneInput" placeholder="Número de teléfono" style="flex:1; padding:10px 14px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); outline:none;">
+          <button class="btn btn-secondary btn-sm" onclick="lookupClientProgress()" style="width:auto; padding:10px 16px;">
+            Consultar
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="confettiContainer"></div>
+
+  <script>
+    let manicuristCode = '';
+    let manicuristInfo = null;
+    let rememberedPhone = localStorage.getItem('loyalty_client_phone') || '';
+    let rememberedName = localStorage.getItem('loyalty_client_name') || '';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    manicuristCode = (urlParams.get('code') || '').trim().toUpperCase();
+
+    // Sound effect with Web Audio API (Zero external assets needed)
+    function playVictoryChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.12);
+          osc.stop(ctx.currentTime + i * 0.12 + 0.45);
+        });
+      } catch (e) {
+        // AudioContext not allowed or not supported, ignore gracefully
+      }
+    }
+
+    async function init() {
+      if (!manicuristCode) {
+        showError();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/manicurist/${manicuristCode}`);
+        if (!res.ok) {
+          showError();
+          return;
+        }
+        manicuristInfo = await res.json();
+        document.getElementById('salonName').textContent = manicuristInfo.business_name || 'Salón de Belleza';
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('mainView').classList.remove('hidden');
+
+        // Check remembered client
+        if (rememberedPhone) {
+          document.getElementById('clientPhone').value = rememberedPhone;
+          document.getElementById('clientName').value = rememberedName;
+          document.getElementById('lookupPhoneInput').value = rememberedPhone;
+
+          if (rememberedName) {
+            document.getElementById('welcomeName').textContent = rememberedName;
+            document.getElementById('welcomePhone').textContent = rememberedPhone;
+            document.getElementById('welcomeBackCard').classList.remove('hidden');
+          }
+
+          // Fetch current progress directly to show the card!
+          fetchAndShowProgress(rememberedPhone);
+        }
+
+      } catch (err) {
+        showError();
+      }
+    }
+
+    function showError() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('errorView').classList.remove('hidden');
+    }
+
+    function showChangePhoneModal() {
+      rememberedPhone = '';
+      rememberedName = '';
+      localStorage.removeItem('loyalty_client_phone');
+      localStorage.removeItem('loyalty_client_name');
+      document.getElementById('welcomeBackCard').classList.add('hidden');
+      document.getElementById('clientName').value = '';
+      document.getElementById('clientPhone').value = '';
+      document.getElementById('clientName').focus();
+    }
+
+    async function submitVisit() {
+      const name = document.getElementById('clientName').value.trim();
+      const phone = document.getElementById('clientPhone').value.trim();
+      const serviceType = document.getElementById('serviceType').value;
+      const btn = document.getElementById('stampBtn');
+
+      if (!name || !phone) {
+        showAlert('formAlert', '⚠️ Por favor ingresa tu nombre y número de teléfono', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Registrando sello...';
+
+      try {
+        const res = await fetch('/api/visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: name,
+            clientPhone: phone,
+            manicuristCode: manicuristCode,
+            serviceType: serviceType
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAlert('formAlert', `❌ ${data.error}`, 'error');
+          btn.disabled = false;
+          btn.innerHTML = '💅 Estampar Mi Visita';
+          return;
+        }
+
+        // Save in localStorage for future visits
+        localStorage.setItem('loyalty_client_phone', phone);
+        localStorage.setItem('loyalty_client_name', name);
+        rememberedPhone = phone;
+        rememberedName = name;
+
+        // Render card
+        renderLoyaltyCard(data.progress, data.message, data.hasFreeService);
+
+        if (data.hasFreeService) {
+          playVictoryChime();
+          launchConfetti();
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '💅 Estampar Mi Visita';
+
+        // Scroll to card
+        document.getElementById('loyaltyCardSection').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        showAlert('formAlert', '❌ Error de conexión al registrar. Intenta nuevamente.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '💅 Estampar Mi Visita';
+      }
+    }
+
+    async function lookupClientProgress() {
+      const phone = document.getElementById('lookupPhoneInput').value.trim();
+      if (!phone) {
+        alert('Por favor ingresa un número de teléfono');
+        return;
+      }
+
+      fetchAndShowProgress(phone);
+    }
+
+    async function fetchAndShowProgress(phone) {
+      try {
+        const res = await fetch(`/api/client/progress?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(manicuristCode)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          // If not found, ignore on auto-load
+          return;
+        }
+
+        renderLoyaltyCard(data, null, data.hasFreeService);
+        if (data.hasFreeService) {
+          launchConfetti();
+        }
+      } catch (e) {
+        // quiet error
+      }
+    }
+
+    function renderLoyaltyCard(progress, customMessage, isFreeUnlocked) {
+      const cardSec = document.getElementById('loyaltyCardSection');
+      cardSec.classList.remove('hidden');
+
+      const stamps = progress.stampsInCurrentCycle;
+      let stampsHtml = '';
+
+      for (let i = 1; i <= 10; i++) {
+        if (i <= stamps) {
+          if (i === 10) {
+            stampsHtml += `<div class="stamp free" title="¡Servicio GRATIS!">🎁</div>`;
+          } else {
+            stampsHtml += `<div class="stamp filled" title="Servicio ${i}">💅</div>`;
+          }
+        } else {
+          if (i === 10) {
+            stampsHtml += `<div class="stamp empty" style="border:2px dashed #FFA000; color:#FFA000; font-weight:700;" title="Meta: ¡Servicio Gratis!">🎁 10</div>`;
+          } else {
+            stampsHtml += `<div class="stamp empty">${i}</div>`;
+          }
+        }
+      }
+
+      let celebrationBanner = '';
+      if (progress.hasFreeService) {
+        celebrationBanner = `
+          <div class="free-banner">
+            <h2>🎉 ¡FELICITACIONES! 🎉</h2>
+            <p style="font-size:1.05rem; font-weight:600; margin:8px 0;">¡Completaste tus 10 servicios!</p>
+            <p style="font-size:0.95rem;">Tu próximo servicio con <strong>${manicuristInfo.business_name}</strong> es <strong>100% GRATIS</strong>.</p>
+            <p style="font-size:0.85rem; margin-top:8px; opacity:0.9;">Muestra esta pantalla a tu manicurista al momento de tu cita.</p>
+          </div>
+        `;
+      }
+
+      let notification = customMessage ? `<div class="alert alert-success" style="font-size:0.95rem;">${customMessage}</div>` : '';
+
+      cardSec.innerHTML = `
+        ${notification}
+        ${celebrationBanner}
+        <div class="loyalty-card" style="box-shadow: 0 8px 30px rgba(233, 30, 99, 0.15);">
+          <div class="salon-name">💅 ${manicuristInfo.business_name}</div>
+          <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--pink); font-weight:700; margin-bottom:4px;">Tarjeta Oficial de Fidelidad</div>
+          <div class="client-name">Cliente: <strong>${progress.client.name}</strong> (${progress.client.phone})</div>
+
+          <div class="stamps-grid">
+            ${stampsHtml}
+          </div>
+
+          <div class="progress-text" style="font-size:1.05rem;">
+            ${progress.hasFreeService
+              ? '🏆 <strong style="color:#C2185B;">¡Has alcanzado la meta! Servicio Gratis disponible</strong>'
+              : `Llevas <strong>${stamps}</strong> de 10 sellos. Te faltan <strong>${progress.stampsNeeded}</strong> para tu servicio gratis.`
+            }
+          </div>
+
+          <div style="margin-top:20px; padding-top:16px; border-top:1px dashed var(--pink-50); display:flex; justify-content:space-around; font-size:0.85rem; color:var(--gray-700);">
+            <div>Total visitas: <strong>${progress.totalVisits}</strong></div>
+            <div>Sellos ciclo actual: <strong>${stamps}/10</strong></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function showAlert(id, msg, type) {
+      document.getElementById(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      }, 6000);
+    }
+
+    function launchConfetti() {
+      const container = document.getElementById('confettiContainer');
+      container.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = 'confetti-container';
+
+      const colors = ['#E91E63', '#FFD700', '#FF4081', '#4CAF50', '#00BCD4', '#9C27B0'];
+      for (let i = 0; i < 60; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = (Math.random() * 1.5) + 's';
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        piece.style.width = (8 + Math.random() * 8) + 'px';
+        piece.style.height = (8 + Math.random() * 8) + 'px';
+        div.appendChild(piece);
+      }
+      container.appendChild(div);
+      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    }
+
+    init();
+  </script>
+</body>
+</html>

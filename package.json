@@ -1,0 +1,10 @@
+{
+  "name": "loyalty-nails-app",
+  "version": "1.0.0",
+  "description": "App de fidelidad para manicuristas - Escanea QR, acumula servicios, gana uno gratis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}

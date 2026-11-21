@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>💅 Panel Manicurista - Loyalty Nails</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+</head>
+<body class="has-nav">
+
+  <!-- ==================== AUTH SCREEN ==================== -->
+  <div id="authScreen" class="auth-container">
+    <div class="logo">💅</div>
+    <h2>Loyalty Nails</h2>
+    <p class="auth-subtitle">Gestión de Fidelidad para Salones y Manicuristas</p>
+
+    <div class="auth-card">
+      <!-- LOGIN -->
+      <div id="loginForm" class="card">
+        <div class="card-title">🔐 Iniciar Sesión</div>
+        <div id="loginAlert"></div>
+        <div class="form-group">
+          <label>Teléfono Registrado</label>
+          <input type="tel" id="loginPhone" placeholder="Ej: 04141234567" autocomplete="tel">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" onclick="login()">Entrar al Panel</button>
+        <div class="auth-toggle">
+          ¿Primera vez aquí? <a onclick="toggleAuth('register')">Crear cuenta gratis</a>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="registerForm" class="card hidden">
+        <div class="card-title">✨ Registrar Mi Salón</div>
+        <div id="registerAlert"></div>
+        <div class="form-group">
+          <label>Tu Nombre y Apellido</label>
+          <input type="text" id="regName" placeholder="Ej: Valentina Morales">
+        </div>
+        <div class="form-group">
+          <label>Nombre de tu Salón / Marca</label>
+          <input type="text" id="regBusiness" placeholder="Ej: Valentina Nails Studio">
+        </div>
+        <div class="form-group">
+          <label>Teléfono (WhatsApp)</label>
+          <input type="tel" id="regPhone" placeholder="Ej: 04141234567">
+        </div>
+        <div class="form-group">
+          <label>Crea una Contraseña</label>
+          <input type="password" id="regPassword" placeholder="Mínimo 4 caracteres">
+        </div>
+        <button class="btn btn-primary" onclick="register()">Crear Mi Cuenta</button>
+        <div class="auth-toggle">
+          ¿Ya tienes cuenta? <a onclick="toggleAuth('login')">Inicia sesión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="dashboard" class="hidden">
+    <div class="header">
+      <div style="display:flex; justify-content:space-between; align-items:center; max-width:900px; margin:0 auto;">
+        <div style="text-align:left;">
+          <h1 style="font-size:1.3rem;">💅 <span id="dashBusinessName">Mi Salón</span></h1>
+          <div class="subtitle" id="dashName"></div>
+        </div>
+        <button onclick="logout()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600;">
+          Salir
+        </button>
+      </div>
+    </div>
+
+    <div class="container wide">
+      <!-- TAB: HOME -->
+      <div id="tabHome">
+        <!-- Stats Row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="statClients">0</div>
+            <div class="stat-label">Clientas Activas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statVisits">0</div>
+            <div class="stat-label">Servicios Realizados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statToday">0</div>
+            <div class="stat-label">Servicios Hoy</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statFree">0</div>
+            <div class="stat-label">Gratis Premiados</div>
+          </div>
+        </div>
+
+        <!-- Banner for fast action -->
+        <div class="card" style="background: linear-gradient(135deg, #FFF0F5 0%, #FFFFFF 100%); border: 1px solid var(--pink-50); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-weight:700; color:var(--pink-dark);">📱 Tu Código de Salón: <span id="fastCode" style="font-size:1.2rem; font-weight:800; color:var(--pink);"></span></div>
+            <div style="font-size:0.85rem; color:var(--gray-500); margin-top:2px;">Las clientas escanean tu QR al terminar cada servicio</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="switchTab('QR')" style="width:auto;">
+            Ver y Descargar QR
+          </button>
+        </div>
+
+        <!-- Clients Close to Free Service -->
+        <div id="closeToFreeSection" class="card hidden">
+          <div class="card-title">
+            🎁 Clientas con Premio Próximo (o Ganado)
+          </div>
+          <p style="font-size:0.85rem; color:var(--gray-500); margin-bottom:12px;">
+            ¡Escríbeles por WhatsApp para fidelizarlas e invitarlas a su cita!
+          </p>
+          <div id="closeToFreeList"></div>
+        </div>
+
+        <!-- Recent Visits -->
+        <div class="card">
+          <div class="card-title">🕒 Últimos Servicios Registrados</div>
+          <div id="recentVisits">
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>Aún no hay visitas registradas hoy.<br>Muestra tu QR para empezar a sumar sellos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CLIENTS -->
+      <div id="tabClients" class="hidden">
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap:wrap;">
+          <input type="text" id="clientSearchInput" oninput="filterClients()" placeholder="🔍 Buscar por nombre o teléfono..." style="flex:1; min-width:200px; padding:10px 14px; border:2px solid var(--gray-200); border-radius:var(--radius-sm); outline:none;">
+          <button class="btn btn-primary btn-sm" onclick="showAddClientModal()" style="width: auto;">
+            ➕ Registrar Clienta
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">👥 Directorio de Clientas (<span id="clientCountTitle">0</span>)</div>
+          <div id="clientsList">
+            <div class="empty-state">
+              <div class="empty-icon">👥</div>
+              <p>Aún no tienes clientas en tu base de datos.<br>Aparecerán automáticamente cada vez que escaneen tu QR.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: QR -->
+      <div id="tabQR" class="hidden">
+        <div class="card" style="text-align:center;">
+          <div class="card-title" style="justify-content:center;">📱 Código QR de Tu Salón</div>
+          <p style="font-size: 0.9rem; color: var(--gray-500); margin-bottom: 20px;">
+            Coloca este código en tu mesa de trabajo o mostrador. Al terminar el servicio, tu clienta lo escanea con la cámara de su teléfono.
+          </p>
+          
+          <div id="qrDisplay" class="qr-display">
+            <div class="spinner" style="border-color: rgba(233,30,99,0.2); border-top-color: var(--pink); width:40px; height:40px; margin: 0 auto;"></div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <p style="font-size: 0.9rem; color: var(--gray-700);">
+              Código Único: <strong id="qrCodeText" style="color: var(--pink-dark); font-size: 1.3rem; letter-spacing:1px;"></strong>
+            </p>
+            <p id="qrUrlText" style="font-size: 0.75rem; color: var(--gray-500); margin-top: 4px; word-break: break-all;"></p>
+          </div>
+
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="printQRPoster()" style="width: auto; padding:12px 20px;">
+              🖨️ Imprimir Cartel para el Salón
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="copyLink()" style="width: auto; padding:12px 20px;">
+              📋 Copiar Enlace Directo
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💡 ¿Cómo funciona el programa de 10 visitas?</div>
+          <ul style="font-size: 0.9rem; color: var(--gray-700); padding-left: 20px; line-height: 1.8;">
+            <li><strong>Visitas 1 a 10:</strong> La clienta escanea el QR en cada cita y acumula sus sellos.</li>
+            <li><strong>Al completar 10 sellos:</strong> Se desbloquea automáticamente la pantalla dorada de <strong>Servicio GRATIS 🎉</strong>.</li>
+            <li><strong>En su siguiente cita:</strong> La clienta te muestra su pantalla, canjeas el premio con un clic, y su tarjeta se reinicia para comenzar el siguiente ciclo.</li>
+            <li><strong>100% digital:</strong> Sin tarjetas de papel que se pierden o manchan.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- TAB: PROFILE -->
+      <div id="tabProfile" class="hidden">
+        <div class="card">
+          <div class="card-title">👩‍💼 Datos de tu Negocio</div>
+          <div style="font-size: 0.95rem; color: var(--gray-700); line-height: 2.2;">
+            <p><strong>Manicurista:</strong> <span id="profileName"></span></p>
+            <p><strong>Salón / Estudio:</strong> <span id="profileBusiness"></span></p>
+            <p><strong>WhatsApp de contacto:</strong> <span id="profilePhone"></span></p>
+            <p><strong>Código QR asignado:</strong> <span id="profileCode" style="color: var(--pink-dark); font-weight: 800;"></span></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⚙️ Reglas del Programa</div>
+          <p style="font-size:0.9rem; color:var(--gray-700); line-height:1.6;">
+            • Meta requerida: <strong>10 servicios</strong>.<br>
+            • Premio: <strong>1 servicio gratis</strong> en la siguiente cita.<br>
+            • Base de datos privada y segura guardada en tu sistema.
+          </p>
+        </div>
+
+        <button class="btn btn-outline" onclick="logout()" style="margin-top:16px;">
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAVBAR -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="switchTab('Home')" id="navHome">
+        <span class="nav-icon">🏠</span>
+        Inicio
+      </button>
+      <button class="nav-item" onclick="switchTab('Clients')" id="navClients">
+        <span class="nav-icon">👥</span>
+        Clientas
+      </button>
+      <button class="nav-item" onclick="switchTab('QR')" id="navQR">
+        <span class="nav-icon">📱</span>
+        Mi QR
+      </button>
+      <button class="nav-item" onclick="switchTab('Profile')" id="navProfile">
+        <span class="nav-icon">👩‍💼</span>
+        Perfil
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- Manual Add Client Modal -->
+  <div class="modal-overlay" id="addClientModal">
+    <div class="modal">
+      <h3>➕ Registrar Clienta Manualmente</h3>
+      <div id="addClientAlert"></div>
+      <div class="form-group">
+        <label>Nombre y Apellido</label>
+        <input type="text" id="newClientName" placeholder="Ej: Diana Torres">
+      </div>
+      <div class="form-group">
+        <label>Teléfono (WhatsApp)</label>
+        <input type="tel" id="newClientPhone" placeholder="Ej: 04129876543">
+      </div>
+      <div style="display: flex; gap: 8px; margin-top:16px;">
+        <button class="btn btn-secondary" onclick="closeModal('addClientModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="addClient()">Guardar Clienta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Detail & Loyalty Action Modal -->
+  <div class="modal-overlay" id="clientDetailModal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0;">👤 <span id="detailClientName"></span></h3>
+        <button onclick="closeModal('clientDetailModal')" style="border:none; background:none; font-size:1.2rem; cursor:pointer; color:var(--gray-500);">&times;</button>
+      </div>
+      <div id="clientDetailContent">
+        <div style="text-align:center; padding:20px;">
+          <div class="spinner" style="border-color: rgba(233,30,99,0.2); border-top-color: var(--pink); width:30px; height:30px; margin: 0 auto;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentManicurist = null;
+    let allClientsCache = [];
+    let qrGlobalUrl = '';
+    let qrGlobalData = '';
+    const STORAGE_KEY = 'loyaltyNails_manicurist';
+
+    function checkSession() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          currentManicurist = JSON.parse(saved);
+          showDashboard();
+        } catch (e) {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    }
+
+    function toggleAuth(mode) {
+      document.getElementById('loginForm').classList.toggle('hidden', mode === 'register');
+      document.getElementById('registerForm').classList.toggle('hidden', mode === 'login');
+    }
+
+    async function login() {
+      const phone = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!phone || !password) {
+        showAlert('loginAlert', '⚠️ Ingresa tu teléfono y contraseña', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAlert('loginAlert', `❌ ${data.error}`, 'error');
+          return;
+        }
+
+        currentManicurist = data.manicurist;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentManicurist));
+        showDashboard();
+      } catch (err) {
+        showAlert('loginAlert', '❌ Error de conexión con el servidor', 'error');
+      }
+    }
+
+    async function register() {
+      const name = document.getElementById('regName').value.trim();
+      const businessName = document.getElementById('regBusiness').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+      const password = document.getElementById('regPassword').value;
+
+      if (!name || !phone || !password) {
+        showAlert('registerAlert', '⚠️ Por favor completa los campos requeridos', 'error');
+        return;
+      }
+
+      if (password.length < 4) {
+        showAlert('registerAlert', '⚠️ La contraseña debe tener al menos 4 caracteres', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, password, businessName })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAlert('registerAlert', `❌ ${data.error}`, 'error');
+          return;
+        }
+
+        currentManicurist = data.manicurist;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentManicurist));
+        showDashboard();
+      } catch (err) {
+        showAlert('registerAlert', '❌ Error de conexión al crear cuenta', 'error');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem(STORAGE_KEY);
+      currentManicurist = null;
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.body.classList.remove('has-nav');
+    }
+
+    function showDashboard() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.body.classList.add('has-nav');
+
+      document.getElementById('dashBusinessName').textContent = currentManicurist.business_name || 'Mi Salón';
+      document.getElementById('dashName').textContent = `Hola, ${currentManicurist.name} ✨`;
+      document.getElementById('fastCode').textContent = currentManicurist.unique_code;
+
+      loadStats();
+      loadQR();
+      loadClients();
+      loadProfile();
+    }
+
+    function switchTab(tab) {
+      ['Home', 'Clients', 'QR', 'Profile'].forEach(t => {
+        document.getElementById('tab' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('nav' + t).classList.toggle('active', t === tab);
+      });
+
+      if (tab === 'Home') loadStats();
+      if (tab === 'Clients') loadClients();
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`/api/admin/stats/${currentManicurist.id}`);
+        const stats = await res.json();
+
+        document.getElementById('statClients').textContent = stats.totalClients;
+        document.getElementById('statVisits').textContent = stats.totalVisits;
+        document.getElementById('statToday').textContent = stats.todayVisits;
+        document.getElementById('statFree').textContent = stats.freeGiven;
+
+        // Recent visits list
+        if (stats.recentVisits && stats.recentVisits.length > 0) {
+          document.getElementById('recentVisits').innerHTML = stats.recentVisits.map(v => `
+            <div class="visit-item">
+              <div class="visit-icon ${v.is_free ? 'free' : 'paid'}">
+                ${v.is_free ? '🎁' : '💅'}
+              </div>
+              <div class="visit-details">
+                <div class="visit-name">${v.client_name}</div>
+                <div class="visit-date">${formatDate(v.created_at)} · <strong>${v.service_type}</strong></div>
+              </div>
+              <span class="visit-badge ${v.is_free ? 'free' : 'paid'}">
+                ${v.is_free ? 'GRATIS 🎉' : 'Pagado'}
+              </span>
+            </div>
+          `).join('');
+        }
+
+        // Clients close to free service
+        const closeSec = document.getElementById('closeToFreeSection');
+        if (stats.closeToFree && stats.closeToFree.length > 0) {
+          closeSec.classList.remove('hidden');
+          document.getElementById('closeToFreeList').innerHTML = stats.closeToFree.map(c => {
+            const hasFree = c.hasFreeService || c.stamps >= 10;
+            const cleanPhone = (c.phone || '').replace(/\D/g, '');
+            const waMsg = hasFree
+              ? encodeURIComponent(`¡Hola ${c.name}! 💅 En ${currentManicurist.business_name} completaste tus 10 visitas y tu próximo servicio es 100% GRATIS 🎉 ¿Te gustaría agendar tu cita?`)
+              : encodeURIComponent(`¡Hola ${c.name}! 💅 En ${currentManicurist.business_name} llevas ${c.stamps}/10 sellos. ¡Te faltan solo ${10 - c.stamps} visitas para ganar tu servicio GRATIS! ¿Agendamos tu próxima cita?`);
+
+            return `
+              <div class="close-to-free-item" style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--gray-100); gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:42px; height:42px; border-radius:50%; background:${hasFree ? 'linear-gradient(135deg, #FFD700, #FFA000)' : 'var(--pink-light)'}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; color:${hasFree ? '#5D4037' : 'var(--pink-dark)'};">
+                    ${hasFree ? '🎁' : `${c.stamps}/10`}
+                  </div>
+                  <div>
+                    <div style="font-weight:700; font-size:0.95rem;">${c.name}</div>
+                    <div style="font-size:0.8rem; color:var(--gray-500);">${c.phone}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="badge ${hasFree ? 'badge-gold' : 'badge-pink'}">
+                    ${hasFree ? '¡GRATIS!' : `Faltan ${10 - c.stamps}`}
+                  </span>
+                  <a href="https://wa.me/${cleanPhone}?text=${waMsg}" target="_blank" class="btn btn-sm btn-success" style="padding:6px 10px; font-size:0.75rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;" title="Enviar WhatsApp">
+                    💬 WhatsApp
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          closeSec.classList.add('hidden');
+        }
+
+      } catch (err) {
+        console.error('Error stats:', err);
+      }
+    }
+
+    async function loadClients() {
+      try {
+        const res = await fetch(`/api/admin/clients/${currentManicurist.id}`);
+        allClientsCache = await res.json();
+        renderClientsList(allClientsCache);
+      } catch (err) {
+        console.error('Error clients:', err);
+      }
+    }
+
+    function renderClientsList(clients) {
+      document.getElementById('clientCountTitle').textContent = clients.length;
+      const listEl = document.getElementById('clientsList');
+
+      if (clients.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">👥</div>
+            <p>No se encontraron clientas registradas.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = `
+        <ul class="client-list">
+          ${clients.map(c => {
+            const stamps = (c.paid_visits || 0) % 10;
+            let dots = '';
+            for (let i = 0; i < 10; i++) {
+              dots += `<div class="mini-stamp ${i < stamps ? 'filled' : ''}"></div>`;
+            }
+            return `
+              <li class="client-item" onclick="showClientDetail(${c.id})" style="cursor:pointer;">
+                <div class="client-info">
+                  <div class="name">${c.name}</div>
+                  <div class="phone">${c.phone} · ${c.total_visits || 0} servicios acumulados</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="client-stamps" style="justify-content:flex-end;">${dots}</div>
+                  <span style="font-size:0.75rem; font-weight:700; color:var(--pink-dark);">${stamps}/10 sellos</span>
+                </div>
+              </li>
+            `;
+          }).join('')}
+        </ul>
+      `;
+    }
+
+    function filterClients() {
+      const q = document.getElementById('clientSearchInput').value.toLowerCase().trim();
+      if (!q) {
+        renderClientsList(allClientsCache);
+        return;
+      }
+      const filtered = allClientsCache.filter(c => 
+        (c.name && c.name.toLowerCase().includes(q)) || 
+        (c.phone && c.phone.includes(q))
+      );
+      renderClientsList(filtered);
+    }
+
+    async function showClientDetail(clientId) {
+      const modal = document.getElementById('clientDetailModal');
+      modal.classList.add('active');
+      document.getElementById('clientDetailContent').innerHTML = `
+        <div style="text-align:center; padding:20px;">
+          <div class="spinner" style="border-color: rgba(233,30,99,0.2); border-top-color: var(--pink); width:30px; height:30px; margin: 0 auto;"></div>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`/api/admin/client/${clientId}/progress/${currentManicurist.id}`);
+        const progress = await res.json();
+
+        document.getElementById('detailClientName').textContent = progress.client.name;
+
+        const stamps = progress.stampsInCurrentCycle;
+        let stampsHtml = '';
+        for (let i = 1; i <= 10; i++) {
+          if (i <= stamps) {
+            stampsHtml += `<div class="stamp ${i === 10 ? 'free' : 'filled'}">${i === 10 ? '🎁' : '💅'}</div>`;
+          } else {
+            stampsHtml += `<div class="stamp empty">${i === 10 ? '🎁 10' : i}</div>`;
+          }
+        }
+
+        let redeemAction = '';
+        if (progress.hasFreeService) {
+          redeemAction = `
+            <div class="free-banner" style="margin:12px 0; padding:16px;">
+              <h2 style="font-size:1.1rem; margin-bottom:4px;">🎉 ¡Servicio GRATIS Listo!</h2>
+              <p style="font-size:0.85rem;">Esta clienta completó sus 10 servicios.</p>
+            </div>
+            <button class="btn btn-gold" onclick="adminRedeem(${clientId})" style="margin-bottom:12px;">
+              🎁 Canjear Servicio Gratis Hoy
+            </button>
+          `;
+        }
+
+        const cleanPhone = (progress.client.phone || '').replace(/\D/g, '');
+        const waText = encodeURIComponent(`¡Hola ${progress.client.name}! 💅 Te saludamos desde ${currentManicurist.business_name}.`);
+
+        document.getElementById('clientDetailContent').innerHTML = `
+          <div class="loyalty-card" style="margin:0 0 16px 0; padding:16px;">
+            <div class="stamps-grid">${stampsHtml}</div>
+            <div class="progress-text">
+              ${progress.hasFreeService
+                ? '🎁 <strong>¡10 sellos alcanzados! Servicio GRATIS ganado</strong>'
+                : `Lleva <strong>${stamps}</strong> de 10 sellos. Faltan <strong>${progress.stampsNeeded}</strong>.`
+              }
+            </div>
+            <div style="font-size:0.82rem; color:var(--gray-500); margin-top:8px;">
+              Teléfono: <strong>${progress.client.phone}</strong> · Historial: <strong>${progress.totalVisits} visitas</strong>
+            </div>
+          </div>
+
+          ${redeemAction}
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="adminAddVisit(${clientId})">
+              💅 +1 Sello (Registrar Servicio Manual)
+            </button>
+            <a href="https://wa.me/${cleanPhone}?text=${waText}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+              💬 Enviar Mensaje WhatsApp
+            </a>
+          </div>
+        `;
+
+      } catch (err) {
+        document.getElementById('clientDetailContent').innerHTML = `
+          <div class="alert alert-error">Error al cargar información de la clienta</div>
+        `;
+      }
+    }
+
+    async function adminAddVisit(clientId) {
+      try {
+        const res = await fetch('/api/admin/visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId,
+            manicuristId: currentManicurist.id,
+            serviceType: 'Servicio en Salón'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showClientDetail(clientId);
+          loadStats();
+          loadClients();
+        }
+      } catch (err) {
+        alert('Error al registrar visita');
+      }
+    }
+
+    async function adminRedeem(clientId) {
+      if (!confirm('¿Confirmas que deseas canjear el servicio gratuito para esta clienta hoy? Su tarjeta se reiniciará para acumular los próximos 10.')) return;
+      try {
+        const res = await fetch('/api/admin/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId,
+            manicuristId: currentManicurist.id
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showClientDetail(clientId);
+          loadStats();
+          loadClients();
+        }
+      } catch (err) {
+        alert('Error al canjear servicio');
+      }
+    }
+
+    function showAddClientModal() {
+      document.getElementById('addClientModal').classList.add('active');
+      document.getElementById('newClientName').value = '';
+      document.getElementById('newClientPhone').value = '';
+      document.getElementById('newClientName').focus();
+    }
+
+    async function addClient() {
+      const name = document.getElementById('newClientName').value.trim();
+      const phone = document.getElementById('newClientPhone').value.trim();
+
+      if (!name || !phone) {
+        showAlert('addClientAlert', '⚠️ Ingresa nombre y teléfono', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            manicuristId: currentManicurist.id
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('addClientModal');
+          loadClients();
+          loadStats();
+        }
+      } catch (err) {
+        showAlert('addClientAlert', '❌ Error al agregar clienta', 'error');
+      }
+    }
+
+    async function loadQR() {
+      try {
+        const res = await fetch(`/api/qr/${currentManicurist.unique_code}`);
+        const data = await res.json();
+
+        qrGlobalUrl = data.url;
+        qrGlobalData = data.qr;
+
+        document.getElementById('qrCodeText').textContent = currentManicurist.unique_code;
+        document.getElementById('qrUrlText').textContent = data.url;
+        document.getElementById('qrDisplay').innerHTML = `
+          <img src="${data.qr}" alt="Código QR del Salón" id="qrImage" style="max-width:240px; border-radius:12px; box-shadow:0 4px 15px rgba(233,30,99,0.15);">
+        `;
+      } catch (err) {
+        document.getElementById('qrDisplay').innerHTML = `
+          <div class="alert alert-error">Error generando código QR</div>
+        `;
+      }
+    }
+
+    function copyLink() {
+      if (!qrGlobalUrl) return;
+      navigator.clipboard.writeText(qrGlobalUrl).then(() => {
+        alert('✅ Enlace copiado al portapapeles:\n' + qrGlobalUrl);
+      }).catch(() => {
+        prompt('Copia este enlace para tus clientas:', qrGlobalUrl);
+      });
+    }
+
+    function printQRPoster() {
+      if (!qrGlobalData) return;
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Cartel de Fidelidad - ${currentManicurist.business_name}</title>
+          <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body {
+              font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+              margin: 0;
+              padding: 20px;
+              color: #212121;
+              text-align: center;
+              background: #FFF;
+            }
+            .poster-box {
+              border: 4px solid #E91E63;
+              border-radius: 24px;
+              padding: 40px 30px;
+              max-width: 600px;
+              margin: 0 auto;
+              background: linear-gradient(180deg, #FFF9FA 0%, #FFFFFF 100%);
+            }
+            .tag {
+              display: inline-block;
+              background: #E91E63;
+              color: white;
+              padding: 8px 24px;
+              border-radius: 50px;
+              font-weight: 700;
+              font-size: 16px;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              margin-bottom: 16px;
+            }
+            h1 {
+              color: #C2185B;
+              font-size: 36px;
+              margin: 0 0 8px 0;
+              font-weight: 800;
+            }
+            .subtitle {
+              color: #616161;
+              font-size: 20px;
+              margin-bottom: 24px;
+            }
+            .qr-wrapper {
+              background: white;
+              display: inline-block;
+              padding: 16px;
+              border-radius: 20px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+              border: 2px solid #F8BBD0;
+              margin: 16px 0;
+            }
+            .qr-wrapper img {
+              width: 280px;
+              height: 280px;
+              display: block;
+            }
+            .steps {
+              display: flex;
+              justify-content: space-around;
+              margin: 30px 0;
+              text-align: center;
+            }
+            .step {
+              flex: 1;
+              padding: 0 10px;
+            }
+            .step-num {
+              width: 36px;
+              height: 36px;
+              background: #E91E63;
+              color: white;
+              border-radius: 50%;
+              line-height: 36px;
+              margin: 0 auto 8px;
+              font-weight: bold;
+              font-size: 16px;
+            }
+            .step-title {
+              font-weight: 700;
+              font-size: 14px;
+              color: #333;
+            }
+            .step-desc {
+              font-size: 12px;
+              color: #777;
+            }
+            .banner {
+              background: linear-gradient(135deg, #FFD700 0%, #FFA000 100%);
+              color: #5D4037;
+              padding: 16px 20px;
+              border-radius: 16px;
+              font-size: 18px;
+              font-weight: 800;
+              margin-top: 20px;
+              letter-spacing: 0.5px;
+            }
+            .code-text {
+              font-size: 14px;
+              color: #888;
+              margin-top: 16px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="poster-box">
+            <div class="tag">✨ Club de Fidelidad ✨</div>
+            <h1>💅 ${currentManicurist.business_name}</h1>
+            <div class="subtitle">¡Tu lealtad tiene recompensa!</div>
+
+            <div class="qr-wrapper">
+              <img src="${qrGlobalData}">
+            </div>
+
+            <div class="steps">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-title">Escanea</div>
+                <div class="step-desc">Usa la cámara de tu celular</div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-title">Suma Sellos</div>
+                <div class="step-desc">En cada visita al salón</div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-title">Gana Gratis</div>
+                <div class="step-desc">¡Al llegar a 10 servicios!</div>
+              </div>
+            </div>
+
+            <div class="banner">
+              🎁 CADA 10 SERVICIOS, ¡EL SIGUIENTE ES TOTALMENTE GRATIS!
+            </div>
+
+            <div class="code-text">Código del salón: <strong>${currentManicurist.unique_code}</strong></div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    function loadProfile() {
+      document.getElementById('profileName').textContent = currentManicurist.name;
+      document.getElementById('profileBusiness').textContent = currentManicurist.business_name;
+      document.getElementById('profilePhone').textContent = currentManicurist.phone;
+      document.getElementById('profileCode').textContent = currentManicurist.unique_code;
+    }
+
+    function showAlert(id, msg, type) {
+      document.getElementById(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      }, 5000);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diff = now - d;
+      if (diff < 60000) return 'Hace un momento';
+      if (diff < 3600000) return `Hace ${Math.floor(diff / 60000)} min`;
+      if (diff < 86400000) return `Hace ${Math.floor(diff / 3600000)} h`;
+      return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+    }
+
+    // Modal background close
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>

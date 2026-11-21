@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>💅 Loyalty Nails</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+</head>
+<body>
+  <div class="container">
+    <!-- LANDING -->
+    <div id="landing" class="landing-hero">
+      <div class="hero-emoji">💅</div>
+      <h1>Loyalty Nails</h1>
+      <p>Tu tarjeta de fidelidad digital. ¡Cada 10 servicios, el siguiente es GRATIS!</p>
+      
+      <div class="landing-buttons">
+        <a href="/admin.html" class="btn btn-primary">👩‍💼 Soy Manicurista</a>
+        <button class="btn btn-secondary" onclick="showClientLookup()">🔍 Consultar mi tarjeta</button>
+      </div>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-icon">📱</span>
+          <div>
+            <h3>Escanea el QR</h3>
+            <p>Al terminar tu servicio, escanea el código QR del salón</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">⭐</span>
+          <div>
+            <h3>Acumula sellos</h3>
+            <p>Cada visita te acerca más a tu servicio gratis</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🎁</span>
+          <div>
+            <h3>¡Servicio gratis!</h3>
+            <p>Al llegar a 10 servicios, el siguiente va por nuestra cuenta</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENT LOOKUP -->
+    <div id="clientLookup" class="hidden">
+      <div style="margin-bottom: 20px;">
+        <button class="btn btn-secondary btn-sm" onclick="showLanding()" style="width: auto;">← Volver</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 Consultar mi tarjeta</div>
+        <div class="form-group">
+          <label>Código del salón</label>
+          <input type="text" id="lookupCode" placeholder="Ej: A1B2C3" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+          <label>Tu teléfono</label>
+          <input type="tel" id="lookupPhone" placeholder="Tu número de teléfono">
+        </div>
+        <button class="btn btn-primary" onclick="lookupProgress()">Consultar</button>
+      </div>
+      <div id="lookupResult"></div>
+    </div>
+  </div>
+
+  <script>
+    function showLanding() {
+      document.getElementById('landing').classList.remove('hidden');
+      document.getElementById('clientLookup').classList.add('hidden');
+    }
+
+    function showClientLookup() {
+      document.getElementById('landing').classList.add('hidden');
+      document.getElementById('clientLookup').classList.remove('hidden');
+    }
+
+    async function lookupProgress() {
+      const code = document.getElementById('lookupCode').value.trim().toUpperCase();
+      const phone = document.getElementById('lookupPhone').value.trim();
+
+      if (!code || !phone) {
+        document.getElementById('lookupResult').innerHTML = `
+          <div class="alert alert-error">⚠️ Ingresa el código del salón y tu teléfono</div>
+        `;
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/client/progress?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById('lookupResult').innerHTML = `
+            <div class="alert alert-error">❌ ${data.error}</div>
+          `;
+          return;
+        }
+
+        document.getElementById('lookupResult').innerHTML = renderLoyaltyCard(data);
+      } catch (err) {
+        document.getElementById('lookupResult').innerHTML = `
+          <div class="alert alert-error">❌ Error de conexión</div>
+        `;
+      }
+    }
+
+    function renderLoyaltyCard(progress) {
+      const stamps = progress.stampsInCurrentCycle;
+      let stampsHtml = '';
+      
+      for (let i = 0; i < 10; i++) {
+        if (i < stamps) {
+          stampsHtml += `<div class="stamp filled">💅</div>`;
+        } else if (i === 9 && stamps === 9) {
+          stampsHtml += `<div class="stamp free">🎁</div>`;
+        } else {
+          stampsHtml += `<div class="stamp empty">${i + 1}</div>`;
+        }
+      }
+
+      let banner = '';
+      if (progress.hasFreeService) {
+        banner = `
+          <div class="free-banner">
+            <h2>🎉 ¡FELICIDADES!</h2>
+            <p>Tienes un <strong>SERVICIO GRATIS</strong> disponible.<br>Muestra esto a tu manicurista.</p>
+          </div>
+        `;
+      }
+
+      return `
+        ${banner}
+        <div class="loyalty-card">
+          <div class="client-name">👋 ${progress.client.name}</div>
+          <div class="stamps-grid">${stampsHtml}</div>
+          <div class="progress-text">
+            ${progress.hasFreeService 
+              ? '🎁 <strong>¡Tu próximo servicio es GRATIS!</strong>'
+              : `Te faltan <strong>${progress.stampsNeeded}</strong> visitas para tu servicio gratis`
+            }
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Tu historial</div>
+          <p style="font-size: 0.9rem; color: var(--gray-500);">
+            Total de visitas: <strong>${progress.totalVisits}</strong>
+          </p>
+        </div>
+      `;
+    }
+
+    // Check URL params (if coming from QR scan redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('lookup') === '1') {
+      showClientLookup();
+      const code = urlParams.get('code');
+      if (code) {
+        document.getElementById('lookupCode').value = code;
+      }
+    }
+  </script>
+</body>
+</html>
